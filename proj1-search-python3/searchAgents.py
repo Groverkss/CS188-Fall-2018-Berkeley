@@ -40,6 +40,9 @@ import util
 import time
 import search
 import itertools
+import random
+
+random.seed(69)
 
 
 class GoWestAgent(Agent):
@@ -587,10 +590,38 @@ def foodHeuristic(state, problem):
     value, try: problem.heuristicInfo['wallCount'] = problem.walls.count()
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
+
+    Heuristic selects numCorners number of vertices as corners and applies the
+    heuristic used in four corners algorithm
     """
+    numCorners = 7
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+
+    if 'corners' not in problem.heuristicInfo:
+        corners = foodGrid.asList()
+        random.shuffle(corners)
+        if len(corners) > numCorners:
+            corners = corners[:numCorners]
+        problem.heuristicInfo['corners'] = corners
+
+    corners = problem.heuristicInfo['corners']
+    cornersLeft = [
+            corner
+            for index, corner in enumerate(foodGrid.asList())
+            if corner in corners
+        ]
+
+    if len(cornersLeft) == 0:
+        return 0
+
+    ret = None
+    for permute in itertools.permutations(cornersLeft):
+        curr = util.manhattanDistance(position, permute[0])
+        for i in range(len(permute) - 1):
+            curr += util.manhattanDistance(permute[i], permute[i + 1])
+        if ret is None or curr < ret:
+            ret = curr
+    return ret
 
 
 class ClosestDotSearchAgent(SearchAgent):
@@ -626,9 +657,7 @@ class ClosestDotSearchAgent(SearchAgent):
         food = gameState.getFood()
         walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
-
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.breadthFirstSearch(problem)
 
 
 class AnyFoodSearchProblem(PositionSearchProblem):
@@ -667,9 +696,7 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         complete the problem definition.
         """
         x, y = state
-
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.food[x][y]
 
 
 def mazeDistance(point1, point2, gameState):
